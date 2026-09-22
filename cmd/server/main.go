@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"iconix-cron/internal/api"
+	"iconix-cron/internal/auth"
 	"iconix-cron/internal/config"
 	"iconix-cron/internal/db"
 	"iconix-cron/internal/repository"
@@ -23,6 +24,9 @@ func main() {
 	log.Println("================================================")
 
 	cfg := config.LoadConfig()
+
+	// Session Manager (1 Hour Session Expiration)
+	sessionManager := auth.NewSessionManager(1 * time.Hour)
 
 	// Initialize DB
 	database, err := db.InitDB(cfg.DBPath)
@@ -45,7 +49,7 @@ func main() {
 	defer engine.Stop()
 
 	// HTTP Router
-	router, err := api.NewRouter(jobRepo, logRepo, engine, cfg.APIKey)
+	router, err := api.NewRouter(jobRepo, logRepo, engine, cfg, sessionManager)
 	if err != nil {
 		log.Fatalf("Fatal: Failed to set up HTTP router: %v", err)
 	}

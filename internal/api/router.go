@@ -6,28 +6,40 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
+	"iconix-cron/internal/auth"
+	"iconix-cron/internal/config"
 	"iconix-cron/internal/repository"
 	"iconix-cron/internal/scheduler"
 )
 
-func NewRouter(jobRepo *repository.JobRepository, logRepo *repository.LogRepository, engine *scheduler.SchedulerEngine, apiKey string) (http.Handler, error) {
+func NewRouter(jobRepo *repository.JobRepository, logRepo *repository.LogRepository, engine *scheduler.SchedulerEngine, cfg *config.Config, sessionManager *auth.SessionManager) (http.Handler, error) {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	easycronHandler := NewEasycronHandler(jobRepo, logRepo, engine, apiKey)
-	webHandler, err := NewWebHandler(jobRepo, logRepo)
+	easycronHandler := NewEasycronHandler(jobRepo, logRepo, engine, cfg.APIKey)
+	webHandler, err := NewWebHandler(jobRepo, logRepo, cfg, sessionManager)
 	if err != nil {
 		return nil, err
 	}
 
-	// Web Dashboard Routes
+	// Public Auth Routes
+	r.Get("/login", webHandler.ShowLoginPage)
+	r.Post("/login", webHandler.ProcessLogin)
+	r.Get("/logout", webHandler.ProcessLogout)
+
+	// Protected Web Dashboard Routes
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/web", http.StatusFound)
 	})
-	r.Get("/web", webHandler.Dashboard)
-	r.Get("/web/logs", webHandler.LogsView)
+
+	r.Group(func(r chi.Router) {
+		r.Use(webHandler.AuthMiddleware)
+
+		r.Get("/web", webHandler.Dashboard)
+		r.Get("/web/logs", webHandler.LogsView)
+	})
 
 	// Easycron REST API Routes
 	r.Route("/v1", func(r chi.Router) {
