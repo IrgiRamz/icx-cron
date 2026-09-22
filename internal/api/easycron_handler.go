@@ -9,30 +9,42 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"iconix-cron/internal/auth"
 	"iconix-cron/internal/model"
 	"iconix-cron/internal/repository"
 	"iconix-cron/internal/scheduler"
 )
 
 type EasycronHandler struct {
-	jobRepo  *repository.JobRepository
-	logRepo  *repository.LogRepository
-	engine   *scheduler.SchedulerEngine
-	apiKey   string
+	jobRepo        *repository.JobRepository
+	logRepo        *repository.LogRepository
+	engine         *scheduler.SchedulerEngine
+	apiKey         string
+	sessionManager *auth.SessionManager
 }
 
-func NewEasycronHandler(jobRepo *repository.JobRepository, logRepo *repository.LogRepository, engine *scheduler.SchedulerEngine, apiKey string) *EasycronHandler {
+func NewEasycronHandler(jobRepo *repository.JobRepository, logRepo *repository.LogRepository, engine *scheduler.SchedulerEngine, apiKey string, sessionManager *auth.SessionManager) *EasycronHandler {
 	return &EasycronHandler{
-		jobRepo: jobRepo,
-		logRepo: logRepo,
-		engine:  engine,
-		apiKey:  apiKey,
+		jobRepo:        jobRepo,
+		logRepo:        logRepo,
+		engine:         engine,
+		apiKey:         apiKey,
+		sessionManager: sessionManager,
 	}
 }
 
-// AuthMiddleware validates X-API-Key header or token query parameter
+// AuthMiddleware validates Session Cookie OR X-API-Key header / token query parameter
 func (h *EasycronHandler) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 1. Check Session Cookie (for web dashboard requests)
+		if cookie, err := r.Cookie("session_token"); err == nil && cookie.Value != "" {
+			if h.sessionManager != nil && h.sessionManager.ValidateSession(cookie.Value) {
+				next.ServeHTTP(w, r)
+				return
+			}
+		}
+
+		// 2. Check X-API-Key / token / api_key query parameter (for external API clients)
 		key := r.Header.Get("X-API-Key")
 		if key == "" {
 			key = r.URL.Query().Get("token")
@@ -41,12 +53,12 @@ func (h *EasycronHandler) AuthMiddleware(next http.Handler) http.Handler {
 			key = r.URL.Query().Get("api_key")
 		}
 
-		if key != h.apiKey && h.apiKey != "" {
-			h.respondError(w, http.StatusUnauthorized, "Invalid API Key")
+		if h.apiKey != "" && key == h.apiKey {
+			next.ServeHTTP(w, r)
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		h.respondError(w, http.StatusUnauthorized, "Unauthorized: Invalid Session or API Key")
 	})
 }
 

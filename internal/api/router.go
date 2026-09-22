@@ -18,7 +18,7 @@ func NewRouter(jobRepo *repository.JobRepository, logRepo *repository.LogReposit
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	easycronHandler := NewEasycronHandler(jobRepo, logRepo, engine, cfg.APIKey)
+	easycronHandler := NewEasycronHandler(jobRepo, logRepo, engine, cfg.APIKey, sessionManager)
 	webHandler, err := NewWebHandler(jobRepo, logRepo, cfg, sessionManager)
 	if err != nil {
 		return nil, err

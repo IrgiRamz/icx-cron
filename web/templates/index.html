@@ -33,7 +33,6 @@
                     </div>
                     <div>
                         <h1 class="text-lg font-bold tracking-tight text-white">Iconix Cron</h1>
-                        <p class="text-xs text-slate-400">Self-Hosted Internal Scheduler</p>
                     </div>
                 </div>
 
@@ -111,7 +110,6 @@
                 class="p-4 sm:p-5 border-b border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                     <h2 class="text-base font-semibold text-white">Cron Jobs List</h2>
-                    <p class="text-xs text-slate-400">Managing 150+ clinic endpoints scheduling</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                     <!-- EPD Metrics Badges -->
@@ -496,7 +494,7 @@
 
             try {
                 const res = await fetch(`/v1/cron-jobs/${id}/executions`, {
-                    headers: { 'X-API-Key': 'iconix-cron-secret-key' }
+                    credentials: 'same-origin'
                 });
                 const data = await res.json();
 
@@ -774,24 +772,28 @@
 
             const res = await fetch(url, {
                 method: method,
-                headers: { 'Content-Type': 'application/json', 'X-API-Key': 'iconix-cron-secret-key' },
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify(payload)
             });
 
             if (res.ok) {
                 location.reload();
             } else {
-                alert('Failed to save cron job');
+                const errData = await res.json().catch(() => ({}));
+                alert('Failed to save cron job: ' + (errData.message || res.statusText));
             }
         }
 
         async function triggerJob(id) {
             const res = await fetch(`/v1/cron-jobs/${id}/trigger`, {
                 method: 'POST',
-                headers: { 'X-API-Key': 'iconix-cron-secret-key' }
+                credentials: 'same-origin'
             });
             if (res.ok) {
                 alert('Job triggered successfully!');
+            } else {
+                alert('Failed to trigger job');
             }
         }
 
@@ -799,7 +801,7 @@
             const endpoint = newStatus === 1 ? 'enable' : 'disable';
             const res = await fetch(`/v1/cron-jobs/${id}/${endpoint}`, {
                 method: 'POST',
-                headers: { 'X-API-Key': 'iconix-cron-secret-key' }
+                credentials: 'same-origin'
             });
             if (res.ok) {
                 location.reload();
@@ -810,7 +812,7 @@
             if (!confirm('Are you sure you want to delete cron job #' + id + '?')) return;
             const res = await fetch(`/v1/cron-jobs/${id}`, {
                 method: 'DELETE',
-                headers: { 'X-API-Key': 'iconix-cron-secret-key' }
+                credentials: 'same-origin'
             });
             if (res.ok) {
                 location.reload();
