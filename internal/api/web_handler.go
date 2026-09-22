@@ -157,3 +157,30 @@ func (h *WebHandler) LogsView(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = h.tmpl.ExecuteTemplate(w, "logs.html", data)
 }
+
+func (h *WebHandler) DocsView(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = h.tmpl.ExecuteTemplate(w, "docs.html", nil)
+}
+
+func (h *WebHandler) ServeOpenAPI(w http.ResponseWriter, r *http.Request) {
+	content, err := web.StaticFS.ReadFile("static/docs/openapi.json")
+	if err != nil {
+		http.Error(w, "OpenAPI specification not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(content)
+}
+
+func (h *WebHandler) ServeFavicon(w http.ResponseWriter, r *http.Request) {
+	content, err := web.StaticFS.ReadFile("static/favicon.svg")
+	if err != nil {
+		http.Error(w, "Favicon not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "image/svg+xml")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(content)
+}

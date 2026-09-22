@@ -1,0 +1,202 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Iconix Cron API",
+    "description": "High-Performance Self-Hosted Cron Scheduler REST API & Easycron Compatible Endpoints.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Authentication Key passed via X-API-Key header or token query parameter."
+      }
+    },
+    "schemas": {
+      "Job": {
+        "type": "object",
+        "properties": {
+          "cron_job_id": { "type": "integer", "example": 1001 },
+          "cron_job_name": { "type": "string", "example": "Clinic WA Sender" },
+          "url": { "type": "string", "example": "https://sola.clinic.co.id/exp_paket" },
+          "cron_expression": { "type": "string", "example": "0,10,20,30,40,50 * * * *" },
+          "http_method": { "type": "string", "example": "GET" },
+          "status": { "type": "integer", "example": 1, "description": "1: Active, 0: Paused/Inactive" },
+          "timeout": { "type": "integer", "example": 60 },
+          "total_successes": { "type": "integer", "example": 1500 },
+          "total_failures": { "type": "integer", "example": 0 },
+          "current_failures": { "type": "integer", "example": 0 }
+        }
+      },
+      "JobInput": {
+        "type": "object",
+        "required": ["url", "cron_expression"],
+        "properties": {
+          "cron_job_name": { "type": "string", "example": "Clinic WA Sender" },
+          "url": { "type": "string", "example": "https://sola.clinic.co.id/exp_paket" },
+          "cron_expression": { "type": "string", "example": "0,10,20,30,40,50 * * * *" },
+          "http_method": { "type": "string", "example": "GET" },
+          "timeout": { "type": "integer", "example": 60 },
+          "status": { "type": "integer", "example": 1 }
+        }
+      },
+      "ExecutionRow": {
+        "type": "object",
+        "properties": {
+          "schedule_time": { "type": "string", "example": "2026-09-22 14:00:00" },
+          "start_time": { "type": "string", "example": "14:00:00" },
+          "end_time": { "type": "string", "example": "14:00:01" },
+          "execution_time": { "type": "string", "example": "0.152310" },
+          "http_code": { "type": "string", "example": "200" },
+          "status": { "type": "string", "example": "Succeeded" },
+          "output": { "type": "string", "example": "OK" },
+          "is_scheduled": { "type": "boolean", "example": false }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/users/me": {
+      "get": {
+        "summary": "Get Current User Info",
+        "tags": ["Account"],
+        "responses": {
+          "200": { "description": "Current User Information" }
+        }
+      }
+    },
+    "/v1/cron-jobs": {
+      "get": {
+        "summary": "Get All Cron Jobs",
+        "tags": ["Cron Jobs"],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "page_size", "in": "query", "schema": { "type": "integer", "default": 10 } },
+          { "name": "sort_by", "in": "query", "schema": { "type": "string" } },
+          { "name": "order", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of Cron Jobs"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a New Cron Job",
+        "tags": ["Cron Jobs"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/JobInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Cron Job Created Successfully" }
+        }
+      }
+    },
+    "/v1/cron-jobs/{id}": {
+      "get": {
+        "summary": "Get Single Cron Job Detail",
+        "tags": ["Cron Jobs"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Cron Job Details" },
+          "404": { "description": "Job Not Found" }
+        }
+      },
+      "patch": {
+        "summary": "Update Cron Job",
+        "tags": ["Cron Jobs"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/JobInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Cron Job Updated" }
+        }
+      },
+      "delete": {
+        "summary": "Delete Cron Job",
+        "tags": ["Cron Jobs"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Cron Job Deleted" }
+        }
+      }
+    },
+    "/v1/cron-jobs/{id}/enable": {
+      "post": {
+        "summary": "Enable/Activate Cron Job",
+        "tags": ["Cron Jobs Actions"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Job Enabled" }
+        }
+      }
+    },
+    "/v1/cron-jobs/{id}/disable": {
+      "post": {
+        "summary": "Disable/Pause Cron Job",
+        "tags": ["Cron Jobs Actions"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Job Disabled" }
+        }
+      }
+    },
+    "/v1/cron-jobs/{id}/trigger": {
+      "post": {
+        "summary": "Trigger Job Execution Immediately",
+        "tags": ["Cron Jobs Actions"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Job Triggered" }
+        }
+      }
+    },
+    "/v1/cron-jobs/{id}/executions": {
+      "get": {
+        "summary": "Get Past Logs & Future Predictions for Job",
+        "tags": ["Executions"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Past 10 Logs and Next 10 Predicted Runs" }
+        }
+      }
+    }
+  }
+}

@@ -24,10 +24,13 @@ func NewRouter(jobRepo *repository.JobRepository, logRepo *repository.LogReposit
 		return nil, err
 	}
 
-	// Public Auth Routes
+	// Public Auth & Documentation & Static Routes
 	r.Get("/login", webHandler.ShowLoginPage)
 	r.Post("/login", webHandler.ProcessLogin)
 	r.Get("/logout", webHandler.ProcessLogout)
+	r.Get("/docs", webHandler.DocsView)
+	r.Get("/docs/openapi.json", webHandler.ServeOpenAPI)
+	r.Get("/favicon.svg", webHandler.ServeFavicon)
 
 	// Protected Web Dashboard Routes
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
