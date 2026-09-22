@@ -1,4 +1,35 @@
-/.desain
-iconix-cron.exe
-cron.db
+# Folder internal/privat
+.desain/
+
+# Binary & Executables hasil build
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+cron-service
+bin/
+dist/
+
+# Database SQLite & Temp files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data.db
+
+# Environment & Credentials (SANGAT PENTING)
 .env
+.env.local
+*.local
+
+# OS & Editor generated files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Log files
+*.log
