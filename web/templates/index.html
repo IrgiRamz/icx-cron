@@ -211,7 +211,18 @@
                                     <i class="fa-solid fa-play text-xs"></i>
                                 </button>
                                 <button
-                                    onclick="openEditModal({{.ID}}, '{{.Name}}', '{{.URL}}', '{{.CronExpression}}', '{{.Method}}', {{.TimeoutSeconds}}, {{.Status}})"
+                                    onclick="editJobFromData(this)"
+                                    data-id="{{.ID}}"
+                                    data-name="{{.Name}}"
+                                    data-url="{{.URL}}"
+                                    data-cron="{{.CronExpression}}"
+                                    data-method="{{.Method}}"
+                                    data-timeout="{{.TimeoutSeconds}}"
+                                    data-status="{{.Status}}"
+                                    data-user="{{.AuthUser}}"
+                                    data-pw="{{.AuthPW}}"
+                                    data-body="{{.HTTPMessageBody}}"
+                                    data-headers="{{.HTTPHeaders}}"
                                     title="Edit"
                                     class="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-md transition-all">
                                     <i class="fa-solid fa-pen-to-square text-xs"></i>
@@ -398,6 +409,13 @@
                             class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
                             <option value="GET">GET</option>
                             <option value="POST">POST</option>
+                            <option value="HEAD">HEAD</option>
+                            <option value="PUT">PUT</option>
+                            <option value="PATCH">PATCH</option>
+                            <option value="DELETE">DELETE</option>
+                            <option value="CONNECT">CONNECT</option>
+                            <option value="OPTIONS">OPTIONS</option>
+                            <option value="TRACE">TRACE</option>
                         </select>
                     </div>
                     <div>
@@ -412,6 +430,39 @@
                             <option value="1">Active</option>
                             <option value="0">Inactive</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- Collapsible Advanced HTTP Settings -->
+                <div class="pt-1">
+                    <button type="button" onclick="toggleAdvancedSettings()" id="advancedToggleBtn"
+                        class="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1.5 transition-colors">
+                        <i class="fa-solid fa-chevron-right text-[10px] transition-transform duration-200" id="advancedChevron"></i>
+                        <span id="advancedToggleLabel">+ Advanced HTTP Settings</span>
+                    </button>
+                    <div id="advancedSettings" class="hidden mt-3 space-y-3 p-3 bg-slate-900/60 border border-slate-800 rounded-lg">
+                        <!-- Basic Auth -->
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-300 mb-1">HTTP Basic Authentication</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="text" id="jobAuthUser" placeholder="Username"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+                                <input type="password" id="jobAuthPW" placeholder="Password"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+                            </div>
+                        </div>
+                        <!-- Message Body -->
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-300 mb-1">HTTP Message Body (Payload)</label>
+                            <textarea id="jobMessageBody" rows="2" placeholder='{"key": "value"}'
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500 resize-y"></textarea>
+                        </div>
+                        <!-- Headers -->
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-300 mb-1">HTTP Headers (1 header per line)</label>
+                            <textarea id="jobHeaders" rows="2" placeholder="Content-Type: application/json&#10;Authorization: Bearer secret"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500 resize-y"></textarea>
+                        </div>
                     </div>
                 </div>
 
@@ -727,6 +778,22 @@
             });
         }
 
+        function toggleAdvancedSettings(forceOpen = null) {
+            const panel = document.getElementById('advancedSettings');
+            const chevron = document.getElementById('advancedChevron');
+            const label = document.getElementById('advancedToggleLabel');
+            const isOpen = forceOpen !== null ? forceOpen : panel.classList.contains('hidden');
+            if (isOpen) {
+                panel.classList.remove('hidden');
+                chevron.classList.add('rotate-90');
+                label.innerText = '- Advanced HTTP Settings';
+            } else {
+                panel.classList.add('hidden');
+                chevron.classList.remove('rotate-90');
+                label.innerText = '+ Advanced HTTP Settings';
+            }
+        }
+
         function openAddModal() {
             document.getElementById('modalTitle').innerText = 'New Cron Job';
             document.getElementById('jobId').value = '';
@@ -735,7 +802,44 @@
             document.getElementById('jobMethod').value = 'GET';
             document.getElementById('jobTimeout').value = '60';
             document.getElementById('jobStatus').value = '1';
+            document.getElementById('jobAuthUser').value = '';
+            document.getElementById('jobAuthPW').value = '';
+            document.getElementById('jobMessageBody').value = '';
+            document.getElementById('jobHeaders').value = '';
+            toggleAdvancedSettings(false);
             parseCronToUI('0,10,20,30,40,50 * * * *');
+            document.getElementById('jobModal').classList.remove('hidden');
+        }
+
+        function editJobFromData(btn) {
+            const id = btn.getAttribute('data-id');
+            const name = btn.getAttribute('data-name');
+            const url = btn.getAttribute('data-url');
+            const cron = btn.getAttribute('data-cron');
+            const method = btn.getAttribute('data-method');
+            const timeout = btn.getAttribute('data-timeout');
+            const status = btn.getAttribute('data-status');
+            const user = btn.getAttribute('data-user') || '';
+            const pw = btn.getAttribute('data-pw') || '';
+            const body = btn.getAttribute('data-body') || '';
+            const headers = btn.getAttribute('data-headers') || '';
+
+            document.getElementById('modalTitle').innerText = 'Edit Cron Job #' + id;
+            document.getElementById('jobId').value = id;
+            document.getElementById('jobName').value = name;
+            document.getElementById('jobURL').value = url;
+            document.getElementById('jobMethod').value = method || 'GET';
+            document.getElementById('jobTimeout').value = timeout;
+            document.getElementById('jobStatus').value = status;
+            document.getElementById('jobAuthUser').value = user;
+            document.getElementById('jobAuthPW').value = pw;
+            document.getElementById('jobMessageBody').value = body;
+            document.getElementById('jobHeaders').value = headers;
+
+            const hasAdvanced = Boolean(user || pw || body || headers);
+            toggleAdvancedSettings(hasAdvanced);
+
+            parseCronToUI(cron);
             document.getElementById('jobModal').classList.remove('hidden');
         }
 
@@ -764,7 +868,11 @@
                 cron_expression: document.getElementById('jobCron').value,
                 http_method: document.getElementById('jobMethod').value,
                 timeout: parseInt(document.getElementById('jobTimeout').value),
-                status: parseInt(document.getElementById('jobStatus').value)
+                status: parseInt(document.getElementById('jobStatus').value),
+                http_auth_user: document.getElementById('jobAuthUser').value,
+                http_auth_pw: document.getElementById('jobAuthPW').value,
+                http_message_body: document.getElementById('jobMessageBody').value,
+                http_headers: document.getElementById('jobHeaders').value
             };
 
             const url = id ? `/v1/cron-jobs/${id}` : '/v1/cron-jobs';

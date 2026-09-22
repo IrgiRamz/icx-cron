@@ -19,8 +19,8 @@ func NewJobRepository(db *sql.DB) *JobRepository {
 
 func (r *JobRepository) Create(job *model.Job) error {
 	query := `
-	INSERT INTO jobs (name, url, method, cron_expression, status, timeout_seconds, retry_count, created_at, updated_at)
-	VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	INSERT INTO jobs (name, url, method, cron_expression, status, timeout_seconds, retry_count, http_headers, http_message_body, auth_user, auth_pw, created_at, updated_at)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	`
 	if strings.TrimSpace(job.Name) == "" {
 		job.Name = "Unnamed"
@@ -32,7 +32,7 @@ func (r *JobRepository) Create(job *model.Job) error {
 		job.TimeoutSeconds = 10
 	}
 
-	res, err := r.db.Exec(query, job.Name, job.URL, job.Method, job.CronExpression, job.Status, job.TimeoutSeconds, job.RetryCount)
+	res, err := r.db.Exec(query, job.Name, job.URL, job.Method, job.CronExpression, job.Status, job.TimeoutSeconds, job.RetryCount, job.HTTPHeaders, job.HTTPMessageBody, job.AuthUser, job.AuthPW)
 	if err != nil {
 		return fmt.Errorf("failed to insert job: %w", err)
 	}
@@ -48,7 +48,8 @@ func (r *JobRepository) Create(job *model.Job) error {
 func (r *JobRepository) GetByID(id int64) (*model.Job, error) {
 	query := `
 	SELECT id, name, url, method, cron_expression, status, timeout_seconds, retry_count,
-	       total_success, total_fail, consecutive_fail, last_run_at, next_run_at, created_at, updated_at
+	       total_success, total_fail, consecutive_fail, last_run_at, next_run_at,
+	       http_headers, http_message_body, auth_user, auth_pw, created_at, updated_at
 	FROM jobs WHERE id = ?
 	`
 	row := r.db.QueryRow(query, id)
@@ -57,7 +58,8 @@ func (r *JobRepository) GetByID(id int64) (*model.Job, error) {
 
 	err := row.Scan(
 		&j.ID, &j.Name, &j.URL, &j.Method, &j.CronExpression, &j.Status, &j.TimeoutSeconds, &j.RetryCount,
-		&j.TotalSuccess, &j.TotalFail, &j.ConsecutiveFail, &lastRun, &nextRun, &j.CreatedAt, &j.UpdatedAt,
+		&j.TotalSuccess, &j.TotalFail, &j.ConsecutiveFail, &lastRun, &nextRun,
+		&j.HTTPHeaders, &j.HTTPMessageBody, &j.AuthUser, &j.AuthPW, &j.CreatedAt, &j.UpdatedAt,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -112,7 +114,8 @@ func (r *JobRepository) GetAll(page, pageSize int, sortBy, order string) ([]mode
 
 	query := fmt.Sprintf(`
 	SELECT id, name, url, method, cron_expression, status, timeout_seconds, retry_count,
-	       total_success, total_fail, consecutive_fail, last_run_at, next_run_at, created_at, updated_at
+	       total_success, total_fail, consecutive_fail, last_run_at, next_run_at,
+	       http_headers, http_message_body, auth_user, auth_pw, created_at, updated_at
 	FROM jobs
 	ORDER BY %s %s
 	LIMIT ? OFFSET ?
@@ -130,7 +133,8 @@ func (r *JobRepository) GetAll(page, pageSize int, sortBy, order string) ([]mode
 		var lastRun, nextRun sql.NullTime
 		if err := rows.Scan(
 			&j.ID, &j.Name, &j.URL, &j.Method, &j.CronExpression, &j.Status, &j.TimeoutSeconds, &j.RetryCount,
-			&j.TotalSuccess, &j.TotalFail, &j.ConsecutiveFail, &lastRun, &nextRun, &j.CreatedAt, &j.UpdatedAt,
+			&j.TotalSuccess, &j.TotalFail, &j.ConsecutiveFail, &lastRun, &nextRun,
+			&j.HTTPHeaders, &j.HTTPMessageBody, &j.AuthUser, &j.AuthPW, &j.CreatedAt, &j.UpdatedAt,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -149,7 +153,8 @@ func (r *JobRepository) GetAll(page, pageSize int, sortBy, order string) ([]mode
 func (r *JobRepository) GetActiveJobs() ([]model.Job, error) {
 	query := `
 	SELECT id, name, url, method, cron_expression, status, timeout_seconds, retry_count,
-	       total_success, total_fail, consecutive_fail, last_run_at, next_run_at, created_at, updated_at
+	       total_success, total_fail, consecutive_fail, last_run_at, next_run_at,
+	       http_headers, http_message_body, auth_user, auth_pw, created_at, updated_at
 	FROM jobs WHERE status = 1
 	`
 	rows, err := r.db.Query(query)
@@ -164,7 +169,8 @@ func (r *JobRepository) GetActiveJobs() ([]model.Job, error) {
 		var lastRun, nextRun sql.NullTime
 		if err := rows.Scan(
 			&j.ID, &j.Name, &j.URL, &j.Method, &j.CronExpression, &j.Status, &j.TimeoutSeconds, &j.RetryCount,
-			&j.TotalSuccess, &j.TotalFail, &j.ConsecutiveFail, &lastRun, &nextRun, &j.CreatedAt, &j.UpdatedAt,
+			&j.TotalSuccess, &j.TotalFail, &j.ConsecutiveFail, &lastRun, &nextRun,
+			&j.HTTPHeaders, &j.HTTPMessageBody, &j.AuthUser, &j.AuthPW, &j.CreatedAt, &j.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -183,10 +189,11 @@ func (r *JobRepository) GetActiveJobs() ([]model.Job, error) {
 func (r *JobRepository) Update(job *model.Job) error {
 	query := `
 	UPDATE jobs SET name = ?, url = ?, method = ?, cron_expression = ?, status = ?,
-	               timeout_seconds = ?, retry_count = ?, updated_at = CURRENT_TIMESTAMP
+	               timeout_seconds = ?, retry_count = ?, http_headers = ?, http_message_body = ?,
+	               auth_user = ?, auth_pw = ?, updated_at = CURRENT_TIMESTAMP
 	WHERE id = ?
 	`
-	_, err := r.db.Exec(query, job.Name, job.URL, job.Method, job.CronExpression, job.Status, job.TimeoutSeconds, job.RetryCount, job.ID)
+	_, err := r.db.Exec(query, job.Name, job.URL, job.Method, job.CronExpression, job.Status, job.TimeoutSeconds, job.RetryCount, job.HTTPHeaders, job.HTTPMessageBody, job.AuthUser, job.AuthPW, job.ID)
 	return err
 }
 

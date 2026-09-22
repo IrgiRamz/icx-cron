@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"iconix-cron/internal/model"
@@ -72,18 +73,45 @@ func (e *Executor) runSingleJob(job *model.Job) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	method := job.Method
+	method := strings.ToUpper(strings.TrimSpace(job.Method))
 	if method == "" {
 		method = "GET"
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, job.URL, nil)
+	var bodyReader io.Reader
+	if job.HTTPMessageBody != "" {
+		bodyReader = strings.NewReader(job.HTTPMessageBody)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, job.URL, bodyReader)
 	if err != nil {
 		e.recordResult(job, 0, time.Since(start).Milliseconds(), fmt.Sprintf("Failed to create request: %v", err), "")
 		return
 	}
 
 	req.Header.Set("User-Agent", "IconixCron-Scheduler/1.0 (+https://iconix.co.id)")
+
+	// Parse multi-line custom HTTP headers
+	if job.HTTPHeaders != "" {
+		lines := strings.Split(job.HTTPHeaders, "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				val := strings.TrimSpace(parts[1])
+				req.Header.Set(key, val)
+			}
+		}
+	}
+
+	// Basic Auth
+	if job.AuthUser != "" || job.AuthPW != "" {
+		req.SetBasicAuth(job.AuthUser, job.AuthPW)
+	}
 
 	resp, err := e.client.Do(req)
 	durationMs := time.Since(start).Milliseconds()

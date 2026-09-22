@@ -47,6 +47,10 @@ func createTables(db *sql.DB) error {
 		consecutive_fail INTEGER NOT NULL DEFAULT 0,
 		last_run_at DATETIME,
 		next_run_at DATETIME,
+		http_headers TEXT DEFAULT '',
+		http_message_body TEXT DEFAULT '',
+		auth_user TEXT DEFAULT '',
+		auth_pw TEXT DEFAULT '',
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
@@ -66,6 +70,20 @@ func createTables(db *sql.DB) error {
 	CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 	`
 
-	_, err := db.Exec(schema)
-	return err
+	if _, err := db.Exec(schema); err != nil {
+		return err
+	}
+
+	// Migrations for existing databases
+	migrations := []string{
+		"ALTER TABLE jobs ADD COLUMN http_headers TEXT DEFAULT ''",
+		"ALTER TABLE jobs ADD COLUMN http_message_body TEXT DEFAULT ''",
+		"ALTER TABLE jobs ADD COLUMN auth_user TEXT DEFAULT ''",
+		"ALTER TABLE jobs ADD COLUMN auth_pw TEXT DEFAULT ''",
+	}
+	for _, m := range migrations {
+		_, _ = db.Exec(m)
+	}
+
+	return nil
 }

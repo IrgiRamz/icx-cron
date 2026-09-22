@@ -161,12 +161,16 @@ func (h *EasycronHandler) GetCronJob(w http.ResponseWriter, r *http.Request) {
 // POST /v1/cron-jobs
 func (h *EasycronHandler) CreateCronJob(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Name           string `json:"cron_job_name"`
-		URL            string `json:"url"`
-		Method         string `json:"http_method"`
-		CronExpression string `json:"cron_expression"`
-		Timeout        int    `json:"timeout"`
-		Status         int    `json:"status"`
+		Name            string `json:"cron_job_name"`
+		URL             string `json:"url"`
+		Method          string `json:"http_method"`
+		CronExpression  string `json:"cron_expression"`
+		Timeout         int    `json:"timeout"`
+		Status          int    `json:"status"`
+		HTTPHeaders     string `json:"http_headers"`
+		HTTPMessageBody string `json:"http_message_body"`
+		AuthUser        string `json:"http_auth_user"`
+		AuthPW          string `json:"http_auth_pw"`
 	}
 
 	// Try reading JSON body first, or fallback to Form values
@@ -183,6 +187,16 @@ func (h *EasycronHandler) CreateCronJob(w http.ResponseWriter, r *http.Request) 
 			input.Status, _ = strconv.Atoi(r.FormValue("status"))
 		} else {
 			input.Status = 1
+		}
+		input.HTTPHeaders = r.FormValue("http_headers")
+		input.HTTPMessageBody = r.FormValue("http_message_body")
+		input.AuthUser = r.FormValue("http_auth_user")
+		if input.AuthUser == "" {
+			input.AuthUser = r.FormValue("auth_user")
+		}
+		input.AuthPW = r.FormValue("http_auth_pw")
+		if input.AuthPW == "" {
+			input.AuthPW = r.FormValue("auth_pw")
 		}
 	}
 
@@ -203,12 +217,16 @@ func (h *EasycronHandler) CreateCronJob(w http.ResponseWriter, r *http.Request) 
 	}
 
 	job := &model.Job{
-		Name:           input.Name,
-		URL:            input.URL,
-		Method:         strings.ToUpper(input.Method),
-		CronExpression: input.CronExpression,
-		Status:         input.Status,
-		TimeoutSeconds: input.Timeout,
+		Name:            input.Name,
+		URL:             input.URL,
+		Method:          strings.ToUpper(input.Method),
+		CronExpression:  input.CronExpression,
+		Status:          input.Status,
+		TimeoutSeconds:  input.Timeout,
+		HTTPHeaders:     input.HTTPHeaders,
+		HTTPMessageBody: input.HTTPMessageBody,
+		AuthUser:        input.AuthUser,
+		AuthPW:          input.AuthPW,
 	}
 
 	if err := h.jobRepo.Create(job); err != nil {
@@ -240,59 +258,102 @@ func (h *EasycronHandler) UpdateCronJob(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var input struct {
-		Name           string `json:"cron_job_name"`
-		URL            string `json:"url"`
-		Method         string `json:"http_method"`
-		CronExpression string `json:"cron_expression"`
-		Timeout        int    `json:"timeout"`
-		Status         *int   `json:"status"`
+		Name            *string `json:"cron_job_name"`
+		URL             *string `json:"url"`
+		Method          *string `json:"http_method"`
+		CronExpression  *string `json:"cron_expression"`
+		Timeout         *int    `json:"timeout"`
+		Status          *int    `json:"status"`
+		HTTPHeaders     *string `json:"http_headers"`
+		HTTPMessageBody *string `json:"http_message_body"`
+		AuthUser        *string `json:"http_auth_user"`
+		AuthPW          *string `json:"http_auth_pw"`
 	}
 
 	if strings.Contains(r.Header.Get("Content-Type"), "application/json") {
 		_ = json.NewDecoder(r.Body).Decode(&input)
 	} else {
 		_ = r.ParseForm()
-		if name := r.FormValue("cron_job_name"); name != "" {
-			input.Name = name
+		if r.Form.Has("cron_job_name") {
+			val := r.FormValue("cron_job_name")
+			input.Name = &val
 		}
-		if urlStr := r.FormValue("url"); urlStr != "" {
-			input.URL = urlStr
+		if r.Form.Has("url") {
+			val := r.FormValue("url")
+			input.URL = &val
 		}
-		if method := r.FormValue("http_method"); method != "" {
-			input.Method = method
+		if r.Form.Has("http_method") {
+			val := r.FormValue("http_method")
+			input.Method = &val
 		}
-		if expr := r.FormValue("cron_expression"); expr != "" {
-			input.CronExpression = expr
+		if r.Form.Has("cron_expression") {
+			val := r.FormValue("cron_expression")
+			input.CronExpression = &val
 		}
-		if tStr := r.FormValue("timeout"); tStr != "" {
-			input.Timeout, _ = strconv.Atoi(tStr)
+		if r.Form.Has("timeout") {
+			tVal, _ := strconv.Atoi(r.FormValue("timeout"))
+			input.Timeout = &tVal
 		}
-		if sStr := r.FormValue("status"); sStr != "" {
-			s, _ := strconv.Atoi(sStr)
-			input.Status = &s
+		if r.Form.Has("status") {
+			sVal, _ := strconv.Atoi(r.FormValue("status"))
+			input.Status = &sVal
+		}
+		if r.Form.Has("http_headers") {
+			val := r.FormValue("http_headers")
+			input.HTTPHeaders = &val
+		}
+		if r.Form.Has("http_message_body") {
+			val := r.FormValue("http_message_body")
+			input.HTTPMessageBody = &val
+		}
+		if r.Form.Has("http_auth_user") {
+			val := r.FormValue("http_auth_user")
+			input.AuthUser = &val
+		} else if r.Form.Has("auth_user") {
+			val := r.FormValue("auth_user")
+			input.AuthUser = &val
+		}
+		if r.Form.Has("http_auth_pw") {
+			val := r.FormValue("http_auth_pw")
+			input.AuthPW = &val
+		} else if r.Form.Has("auth_pw") {
+			val := r.FormValue("auth_pw")
+			input.AuthPW = &val
 		}
 	}
 
-	if input.Name != "" {
-		existing.Name = strings.TrimSpace(input.Name)
+	if input.Name != nil {
+		existing.Name = strings.TrimSpace(*input.Name)
 		if existing.Name == "" {
 			existing.Name = "Unnamed"
 		}
 	}
-	if input.URL != "" {
-		existing.URL = input.URL
+	if input.URL != nil {
+		existing.URL = *input.URL
 	}
-	if input.Method != "" {
-		existing.Method = strings.ToUpper(input.Method)
+	if input.Method != nil {
+		existing.Method = strings.ToUpper(*input.Method)
 	}
-	if input.CronExpression != "" {
-		existing.CronExpression = input.CronExpression
+	if input.CronExpression != nil {
+		existing.CronExpression = *input.CronExpression
 	}
-	if input.Timeout > 0 {
-		existing.TimeoutSeconds = input.Timeout
+	if input.Timeout != nil && *input.Timeout > 0 {
+		existing.TimeoutSeconds = *input.Timeout
 	}
 	if input.Status != nil {
 		existing.Status = *input.Status
+	}
+	if input.HTTPHeaders != nil {
+		existing.HTTPHeaders = *input.HTTPHeaders
+	}
+	if input.HTTPMessageBody != nil {
+		existing.HTTPMessageBody = *input.HTTPMessageBody
+	}
+	if input.AuthUser != nil {
+		existing.AuthUser = *input.AuthUser
+	}
+	if input.AuthPW != nil {
+		existing.AuthPW = *input.AuthPW
 	}
 
 	if err := h.jobRepo.Update(existing); err != nil {
