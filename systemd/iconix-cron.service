@@ -1,0 +1,19 @@
+[Unit]
+Description=Iconix Cron - Self-Hosted Internal Cron Scheduler Engine
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/iconix-cron
+ExecStart=/opt/iconix-cron/iconix-cron
+Restart=always
+RestartSec=5s
+LimitNOFILE=65536
+Environment="PORT=8080"
+Environment="DB_PATH=/opt/iconix-cron/cron.db"
+Environment="API_KEY=iconix-cron-secret-key"
+
+[Install]
+WantedBy=multi-user.target

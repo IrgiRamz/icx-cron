@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iconix Cron - Internal Scheduler</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTMX CDN -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+
+<body class="h-full font-sans antialiased flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="glass-panel sticky top-0 z-40 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-indigo-600 rounded-lg text-white font-bold shadow-lg shadow-indigo-500/30">
+                        <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold tracking-tight text-white">Iconix Cron</h1>
+                        <p class="text-xs text-slate-400">Self-Hosted Internal Scheduler</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <button onclick="openAddModal()"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-sm transition-all">
+                        <i class="fa-solid fa-plus text-xs"></i> New Cron Job
+                    </button>
+                    <a href="/web/logs"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-all">
+                        <i class="fa-solid fa-list-ul text-xs"></i> Execution Logs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Stats Overview Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-panel p-5 rounded-xl flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Jobs</p>
+                    <h3 class="text-2xl font-bold text-white mt-1">{{.TotalJobs}}</h3>
+                </div>
+                <div class="p-3 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/20">
+                    <i class="fa-solid fa-layer-group text-xl"></i>
+                </div>
+            </div>
+
+            <div class="glass-panel p-5 rounded-xl flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Active Jobs</p>
+                    <h3 class="text-2xl font-bold text-emerald-400 mt-1">{{.ActiveJobs}}</h3>
+                </div>
+                <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/20">
+                    <i class="fa-solid fa-circle-check text-xl"></i>
+                </div>
+            </div>
+
+            <div class="glass-panel p-5 rounded-xl flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Failures</p>
+                    <h3 class="text-2xl font-bold text-rose-400 mt-1">{{.TotalFailures}}</h3>
+                </div>
+                <div class="p-3 bg-rose-500/10 text-rose-400 rounded-lg border border-rose-500/20">
+                    <i class="fa-solid fa-circle-exclamation text-xl"></i>
+                </div>
+            </div>
+
+            <div class="glass-panel p-5 rounded-xl flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Executions</p>
+                    <h3 class="text-2xl font-bold text-indigo-400 mt-1">{{.TotalExecutions}}</h3>
+                </div>
+                <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-lg border border-indigo-500/20">
+                    <i class="fa-solid fa-bolt text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cron Jobs Table Card -->
+        <div class="glass-panel rounded-xl overflow-hidden border border-slate-800">
+            <div
+                class="p-4 sm:p-5 border-b border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-base font-semibold text-white">Cron Jobs List</h2>
+                    <p class="text-xs text-slate-400">Managing 150+ clinic endpoints scheduling</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <!-- EPD Metrics Badges -->
+                    <div
+                        class="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 rounded-lg p-1 text-xs font-mono">
+                        <span
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            title="Active EPD (Executions Per Day)">
+                            <i class="fa-solid fa-bolt-lightning text-[10px]"></i>
+                            <span class="font-sans text-[11px] text-slate-400">Active:</span>
+                            <span class="font-bold">{{.ActiveEPD}}</span>
+                        </span>
+                        <span
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 text-slate-400 border border-slate-700"
+                            title="Inactive EPD">
+                            <span class="font-sans text-[11px] text-slate-400">Inactive:</span>
+                            <span class="font-bold text-slate-300">{{.InactiveEPD}}</span>
+                        </span>
+                        <span
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
+                            title="Total EPD">
+                            <span class="font-sans text-[11px] text-slate-400">Total:</span>
+                            <span class="font-bold text-white">{{.TotalEPD}}</span>
+                        </span>
+                    </div>
+
+                    <!-- Search Bar -->
+                    <div class="relative w-full sm:w-64">
+                        <i
+                            class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                        <input type="text" id="searchInput" placeholder="Search job name or URL..."
+                            onkeyup="filterTable()"
+                            class="w-full bg-slate-900 border border-slate-800 text-slate-200 text-xs rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:border-indigo-500 transition-all">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead
+                        class="bg-slate-900/80 text-slate-400 uppercase text-[11px] font-medium tracking-wider border-b border-slate-800">
+                        <tr>
+                            <th class="py-3.5 px-4">ID</th>
+                            <th class="py-3.5 px-4">Name</th>
+                            <th class="py-3.5 px-4">Cron Expression</th>
+                            <th class="py-3.5 px-4">URL</th>
+                            <th class="py-3.5 px-4 text-center">EPDs</th>
+                            <th class="py-3.5 px-4 text-center">Success</th>
+                            <th class="py-3.5 px-4 text-center">Fail</th>
+                            <th class="py-3.5 px-4 text-center">Last Exec</th>
+                            <th class="py-3.5 px-4 text-center">Executions</th>
+                            <th class="py-3.5 px-4 text-center">Status</th>
+                            <th class="py-3.5 px-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobsTableBody" class="divide-y divide-slate-800/60 font-mono text-xs">
+                        {{range .Jobs}}
+                        <tr class="hover:bg-slate-800/40 transition-colors job-row" data-name="{{.Name}}"
+                            data-url="{{.URL}}">
+                            <td class="py-3 px-4 font-semibold text-slate-400">#{{.ID}}</td>
+                            <td class="py-3 px-4 font-sans font-medium text-slate-100">{{.Name}}</td>
+                            <td
+                                class="py-3 px-4 text-indigo-400 bg-indigo-500/5 px-2 py-1 rounded inline-block my-2 border border-indigo-500/10">
+                                {{.CronExpression}}</td>
+                            <td class="py-3 px-4 text-slate-300 font-sans truncate max-w-xs" title="{{.URL}}">
+                                <a href="#"
+                                    class="hover:text-indigo-400 underline decoration-slate-700 underline-offset-2">{{.URL}}</a>
+                            </td>
+                            <td class="py-3 px-4 text-center font-bold text-indigo-300 font-mono">{{.GetEPD}}</td>
+                            <td class="py-3 px-4 text-center text-emerald-400 font-bold">{{.TotalSuccess}}</td>
+                            <td class="py-3 px-4 text-center text-rose-400 font-bold">{{.TotalFail}}</td>
+                            <td class="py-3 px-4 text-center font-sans text-slate-400">
+                                {{if .LastRunAt}}{{.LastRunAt.Format "15:04:05 02/01"}}{{else}}-{{end}}
+                            </td>
+                            <td class="py-3 px-4 text-center font-sans">
+                                <button onclick="openExecutionsModal({{.ID}}, '{{.Name}}')"
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-md border border-indigo-500/20 transition-all">
+                                    <i class="fa-solid fa-list-check text-[10px]"></i> Executions
+                                </button>
+                            </td>
+                            <td class="py-3 px-4 text-center font-sans">
+                                {{if eq .Status 1}}
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active
+                                </span>
+                                {{else}}
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-800 text-slate-400 border border-slate-700">
+                                    Inactive
+                                </span>
+                                {{if .LastRunAt}}{{end}}
+                                {{end}}
+                            </td>
+                            <td class="py-3 px-4 text-right font-sans space-x-1">
+                                <button onclick="triggerJob({{.ID}})" title="Trigger Now"
+                                    class="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-md transition-all">
+                                    <i class="fa-solid fa-play text-xs"></i>
+                                </button>
+                                <button
+                                    onclick="openEditModal({{.ID}}, '{{.Name}}', '{{.URL}}', '{{.CronExpression}}', '{{.Method}}', {{.TimeoutSeconds}}, {{.Status}})"
+                                    title="Edit"
+                                    class="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-md transition-all">
+                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                </button>
+                                <button onclick="toggleStatus({{.ID}}, {{if eq .Status 1}}0{{else}}1{{end}})"
+                                    title="Toggle Enable/Disable"
+                                    class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md transition-all">
+                                    <i class="fa-solid fa-power-off text-xs"></i>
+                                </button>
+                                <button onclick="deleteJob({{.ID}})" title="Delete"
+                                    class="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-md transition-all">
+                                    <i class="fa-solid fa-trash text-xs"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {{else}}
+                        <tr>
+                            <td colspan="10" class="py-8 text-center text-slate-500 font-sans">No cron jobs configured
+                                yet. Click "New Cron Job" to create one.</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Form (Create / Edit Job) -->
+    <div id="jobModal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+        <div class="glass-panel max-w-lg w-full rounded-xl border border-slate-700 shadow-2xl p-6 relative">
+            <button onclick="closeJobModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 id="modalTitle" class="text-lg font-bold text-white mb-4">New Cron Job</h3>
+
+            <form id="jobForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <input type="hidden" id="jobId" value="">
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Job Name</label>
+                    <input type="text" id="jobName" placeholder="Unnamed"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Target URL</label>
+                    <input type="url" id="jobURL" required placeholder="https://clinic.co.id/cron_endpoint"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <!-- 3-Mode Cron Expression Selector Component -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-medium text-slate-300">Schedule / Cron Expression</label>
+                        <span id="currentModeBadge"
+                            class="text-[10px] text-indigo-400 font-mono uppercase bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">Mode:
+                            Every</span>
+                    </div>
+
+                    <!-- Mode Tabs Navigation -->
+                    <div
+                        class="flex items-center p-1 bg-slate-900 border border-slate-700/80 rounded-lg text-xs font-medium mb-3">
+                        <button type="button" onclick="switchCronMode('preset')" id="tabModePreset"
+                            class="flex-1 py-1.5 px-2 rounded-md transition-all text-center">Every</button>
+                        <button type="button" onclick="switchCronMode('expression')" id="tabModeExpression"
+                            class="flex-1 py-1.5 px-2 rounded-md transition-all text-center">Expression</button>
+                        <button type="button" onclick="switchCronMode('matrix')" id="tabModeMatrix"
+                            class="flex-1 py-1.5 px-2 rounded-md transition-all text-center">Select Manually</button>
+                    </div>
+
+                    <!-- Mode 1: Preset Dropdown -->
+                    <div id="cronModePreset" class="cron-mode-content hidden">
+                        <select id="cronPresetSelect" onchange="onPresetChange()"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500">
+                            <option value="* * * * *">minute </option>
+                            <option value="*/2 * * * *">2 minutes </option>
+                            <option value="*/3 * * * *">3 minutes </option>
+                            <option value="*/4 * * * *">4 minutes </option>
+                            <option value="*/5 * * * *">5 minutes </option>
+                            <option value="*/6 * * * *">6 minutes </option>
+                            <option value="*/10 * * * *">10 minutes </option>
+                            <option value="*/12 * * * *">12 minutes </option>
+                            <option value="*/15 * * * *">15 minutes </option>
+                            <option value="*/20 * * * *">20 minutes </option>
+                            <option value="*/30 * * * *">30 minutes </option>
+                            <option value="0 * * * *">hour </option>
+                            <option value="0 */2 * * *">2 hours </option>
+                            <option value="0 */3 * * *">3 hours </option>
+                            <option value="0 */4 * * *">4 hours </option>
+                            <option value="0 */6 * * *">6 hours </option>
+                            <option value="0 */8 * * *">8 hours </option>
+                            <option value="0 */12 * * *">12 hours </option>
+                            <option value="0 0 * * *">day </option>
+                            <option value="0 0 */2 * *">2 days </option>
+                            <option value="0 0 */3 * *">3 days </option>
+                            <option value="0 0 */5 * *">5 days (loose)</option>
+                            <option value="0 0 */10 * *">10 days (loose)</option>
+                            <option value="0 0 */15 * *">15 days (loose)</option>
+                            <option value="0 0 1 * *">month </option>
+                            <option value="0 0 * * 0">week </option>
+                        </select>
+                    </div>
+
+                    <!-- Mode 2: Manual Expression Input -->
+                    <div id="cronModeExpression" class="cron-mode-content hidden">
+                        <input type="text" id="cronCustomInput" oninput="onCustomInputChange()"
+                            placeholder="0,10,20,30,40,50 * * * *"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-indigo-400 focus:outline-none focus:border-indigo-500">
+                        <p class="text-[10px] text-slate-500 mt-1">Syntax: Minute Hour Day Month DayOfWeek (e.g.
+                            0,10,20,30,40,50 * * * *)</p>
+                    </div>
+
+                    <!-- Mode 3: Matrix Grid Selector -->
+                    <div id="cronModeMatrix" class="cron-mode-content hidden space-y-2.5 max-h-52 overflow-y-auto pr-1">
+                        <!-- Minutes -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] font-semibold text-slate-400 uppercase">Minutes (0-59)</span>
+                                <button type="button" onclick="toggleMatrixGroup('min')"
+                                    class="text-[10px] text-indigo-400 hover:underline">Toggle All</button>
+                            </div>
+                            <div id="matrixMinutes" class="grid grid-cols-10 gap-1 text-[10px] font-mono"></div>
+                        </div>
+
+                        <!-- Hours -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] font-semibold text-slate-400 uppercase">Hours (0-23)</span>
+                                <button type="button" onclick="toggleMatrixGroup('hour')"
+                                    class="text-[10px] text-indigo-400 hover:underline">Toggle All</button>
+                            </div>
+                            <div id="matrixHours" class="grid grid-cols-8 gap-1 text-[10px] font-mono"></div>
+                        </div>
+
+                        <!-- Days of Month -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] font-semibold text-slate-400 uppercase">Days of Month
+                                    (1-31)</span>
+                                <button type="button" onclick="toggleMatrixGroup('day')"
+                                    class="text-[10px] text-indigo-400 hover:underline">Toggle All</button>
+                            </div>
+                            <div id="matrixDays" class="grid grid-cols-8 gap-1 text-[10px] font-mono"></div>
+                        </div>
+
+                        <!-- Months -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] font-semibold text-slate-400 uppercase">Months (Jan-Dec)</span>
+                                <button type="button" onclick="toggleMatrixGroup('month')"
+                                    class="text-[10px] text-indigo-400 hover:underline">Toggle All</button>
+                            </div>
+                            <div id="matrixMonths" class="grid grid-cols-6 gap-1 text-[10px]"></div>
+                        </div>
+
+                        <!-- Days of Week -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] font-semibold text-slate-400 uppercase">Day of Week
+                                    (Sun-Sat)</span>
+                                <button type="button" onclick="toggleMatrixGroup('dow')"
+                                    class="text-[10px] text-indigo-400 hover:underline">Toggle All</button>
+                            </div>
+                            <div id="matrixDow" class="grid grid-cols-7 gap-1 text-[10px]"></div>
+                        </div>
+                    </div>
+
+                    <!-- Final Resulting Main Input -->
+                    <div
+                        class="mt-2 p-2 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-between">
+                        <span class="text-[11px] text-slate-400 font-sans">Resulting Expression:</span>
+                        <input type="text" id="jobCron" required readonly
+                            class="bg-transparent text-right font-mono text-xs font-bold text-indigo-400 focus:outline-none cursor-default w-64"
+                            value="0,10,20,30,40,50 * * * *">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">HTTP Method</label>
+                        <select id="jobMethod"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Timeout (s)</label>
+                        <input type="number" id="jobTimeout" value="60" min="1" max="60"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Status</label>
+                        <select id="jobStatus"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            <option value="1">Active</option>
+                            <option value="0">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3 border-t border-slate-800">
+                    <button type="button" onclick="closeJobModal()"
+                        class="px-4 py-2 text-sm text-slate-400 hover:text-white bg-slate-800 rounded-lg">Cancel</button>
+                    <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-sm">Save
+                        Cron Job</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Executions Modal (Logs & Predictions) -->
+    <div id="executionsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+        <div class="glass-panel max-w-4xl w-full rounded-xl border border-slate-700 shadow-2xl p-6 relative flex flex-col max-h-[85vh]">
+            <button onclick="closeExecutionsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="mb-4 pr-8">
+                <h3 id="execModalTitle" class="text-lg font-bold text-white">Cron Job Executions & Predictions</h3>
+                <p id="execModalSub" class="text-xs text-slate-400 font-mono mt-0.5 truncate"></p>
+            </div>
+
+            <!-- Table Container -->
+            <div class="overflow-x-auto flex-1 border border-slate-800 rounded-lg">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/90 text-slate-400 uppercase text-[10px] font-medium tracking-wider sticky top-0 border-b border-slate-800">
+                        <tr>
+                            <th class="py-3 px-3">Schedule Time</th>
+                            <th class="py-3 px-3 text-center">Start Time</th>
+                            <th class="py-3 px-3 text-center">End Time</th>
+                            <th class="py-3 px-3 text-center">Exec Time (s)</th>
+                            <th class="py-3 px-3 text-center">HTTP Code</th>
+                            <th class="py-3 px-3 text-center">Status</th>
+                            <th class="py-3 px-3">Output / Snippet</th>
+                        </tr>
+                    </thead>
+                    <tbody id="execTableBody" class="divide-y divide-slate-800/60 font-mono text-xs">
+                        <tr>
+                            <td colspan="7" class="py-8 text-center text-slate-500 font-sans">Loading execution data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer -->
+            <div class="pt-4 mt-2 flex justify-between items-center border-t border-slate-800">
+                <div class="flex items-center gap-4 text-xs font-sans text-slate-400">
+                    <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Succeeded</span>
+                    <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span> Failed</span>
+                    <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-500"></span> Scheduled</span>
+                </div>
+                <button type="button" onclick="closeExecutionsModal()" class="px-4 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let activeCronMode = 'preset';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            buildMatrixGrid();
+        });
+
+        async function openExecutionsModal(id, name) {
+            document.getElementById('execModalTitle').innerText = 'Cron Job Executions & Predictions';
+            document.getElementById('execModalSub').innerText = 'Job #' + id + ': ' + name;
+            document.getElementById('execTableBody').innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500 font-sans"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading execution logs & predictions...</td></tr>';
+            document.getElementById('executionsModal').classList.remove('hidden');
+
+            try {
+                const res = await fetch(`/v1/cron-jobs/${id}/executions`, {
+                    headers: { 'X-API-Key': 'iconix-cron-secret-key' }
+                });
+                const data = await res.json();
+
+                if (!res.ok || !data.executions) {
+                    document.getElementById('execTableBody').innerHTML = '<tr><td colspan="7" class="py-8 text-center text-rose-400 font-sans">Failed to load execution data.</td></tr>';
+                    return;
+                }
+
+                const tbody = document.getElementById('execTableBody');
+                tbody.innerHTML = '';
+
+                if (data.executions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500 font-sans">No execution logs or predictions found.</td></tr>';
+                    return;
+                }
+
+                data.executions.forEach(item => {
+                    const tr = document.createElement('tr');
+                    if (item.is_scheduled) {
+                        tr.className = 'bg-slate-900/30 text-slate-400 italic font-mono hover:bg-slate-800/20';
+                    } else {
+                        tr.className = 'hover:bg-slate-800/40 transition-colors font-mono';
+                    }
+
+                    let statusBadge = '';
+                    if (item.is_scheduled) {
+                        statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-sans font-medium bg-slate-800 text-slate-400 border border-slate-700">Scheduled</span>';
+                    } else if (item.status === 'Succeeded') {
+                        statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-sans font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Succeeded</span>';
+                    } else {
+                        statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-sans font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">Failed</span>';
+                    }
+
+                    let httpBadge = item.http_code;
+                    if (!item.is_scheduled && item.http_code !== '-') {
+                        if (item.http_code.startsWith('2')) {
+                            httpBadge = `<span class="text-emerald-400 font-bold">${item.http_code}</span>`;
+                        } else {
+                            httpBadge = `<span class="text-rose-400 font-bold">${item.http_code}</span>`;
+                        }
+                    }
+
+                    tr.innerHTML = `
+                        <td class="py-2.5 px-3 font-semibold ${item.is_scheduled ? 'text-slate-400 font-sans' : 'text-slate-200'}">${item.schedule_time}</td>
+                        <td class="py-2.5 px-3 text-center text-slate-400">${item.start_time}</td>
+                        <td class="py-2.5 px-3 text-center text-slate-400">${item.end_time}</td>
+                        <td class="py-2.5 px-3 text-center ${item.is_scheduled ? 'text-slate-500' : 'text-indigo-400 font-bold'}">${item.execution_time}</td>
+                        <td class="py-2.5 px-3 text-center">${httpBadge}</td>
+                        <td class="py-2.5 px-3 text-center">${statusBadge}</td>
+                        <td class="py-2.5 px-3 text-slate-400 truncate max-w-xs ${item.is_scheduled ? 'font-sans' : ''}" title="${item.output}">${item.output}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                document.getElementById('execTableBody').innerHTML = '<tr><td colspan="7" class="py-8 text-center text-rose-400 font-sans">Error loading execution data: ' + err.message + '</td></tr>';
+            }
+        }
+
+        function closeExecutionsModal() {
+            document.getElementById('executionsModal').classList.add('hidden');
+        }
+
+        function buildMatrixGrid() {
+            // Minutes (0-59)
+            const minContainer = document.getElementById('matrixMinutes');
+            minContainer.innerHTML = '';
+            for (let i = 0; i < 60; i++) {
+                minContainer.appendChild(createMatrixBtn('min', i, i.toString().padStart(2, '0')));
+            }
+
+            // Hours (0-23)
+            const hourContainer = document.getElementById('matrixHours');
+            hourContainer.innerHTML = '';
+            for (let i = 0; i < 24; i++) {
+                hourContainer.appendChild(createMatrixBtn('hour', i, i.toString().padStart(2, '0')));
+            }
+
+            // Days (1-31)
+            const dayContainer = document.getElementById('matrixDays');
+            dayContainer.innerHTML = '';
+            for (let i = 1; i <= 31; i++) {
+                dayContainer.appendChild(createMatrixBtn('day', i, i));
+            }
+
+            // Months (1-12)
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthContainer = document.getElementById('matrixMonths');
+            monthContainer.innerHTML = '';
+            for (let i = 1; i <= 12; i++) {
+                monthContainer.appendChild(createMatrixBtn('month', i, monthNames[i - 1]));
+            }
+
+            // Day of Week (0-6)
+            const dowNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const dowContainer = document.getElementById('matrixDow');
+            dowContainer.innerHTML = '';
+            for (let i = 0; i < 7; i++) {
+                dowContainer.appendChild(createMatrixBtn('dow', i, dowNames[i]));
+            }
+        }
+
+        function createMatrixBtn(group, val, label) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.dataset.group = group;
+            btn.dataset.value = val;
+            btn.className = 'matrix-btn py-1 rounded text-center border transition-all bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700';
+            btn.innerText = label;
+            btn.onclick = () => {
+                btn.classList.toggle('active');
+                if (btn.classList.contains('active')) {
+                    btn.className = 'matrix-btn active py-1 rounded text-center border transition-all bg-indigo-600 text-white border-indigo-500 font-bold';
+                } else {
+                    btn.className = 'matrix-btn py-1 rounded text-center border transition-all bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700';
+                }
+                updateCronFromMatrix();
+            };
+            return btn;
+        }
+
+        function switchCronMode(mode) {
+            activeCronMode = mode;
+            document.querySelectorAll('.cron-mode-content').forEach(el => el.classList.add('hidden'));
+
+            // Tab Buttons styling
+            const tabs = { preset: 'tabModePreset', expression: 'tabModeExpression', matrix: 'tabModeMatrix' };
+            const badge = document.getElementById('currentModeBadge');
+
+            Object.keys(tabs).forEach(m => {
+                const tabBtn = document.getElementById(tabs[m]);
+                if (m === mode) {
+                    tabBtn.className = 'flex-1 py-1.5 px-2 rounded-md transition-all text-center bg-indigo-600 text-white shadow-sm font-semibold';
+                } else {
+                    tabBtn.className = 'flex-1 py-1.5 px-2 rounded-md transition-all text-center text-slate-400 hover:text-white';
+                }
+            });
+
+            if (mode === 'preset') {
+                document.getElementById('cronModePreset').classList.remove('hidden');
+                badge.innerText = 'Mode: Every (Preset)';
+                onPresetChange();
+            } else if (mode === 'expression') {
+                document.getElementById('cronModeExpression').classList.remove('hidden');
+                badge.innerText = 'Mode: Expression';
+                onCustomInputChange();
+            } else if (mode === 'matrix') {
+                document.getElementById('cronModeMatrix').classList.remove('hidden');
+                badge.innerText = 'Mode: Select Manually';
+                updateCronFromMatrix();
+            }
+        }
+
+        function onPresetChange() {
+            const val = document.getElementById('cronPresetSelect').value;
+            document.getElementById('jobCron').value = val;
+        }
+
+        function onCustomInputChange() {
+            const val = document.getElementById('cronCustomInput').value.trim();
+            document.getElementById('jobCron').value = val || '* * * * *';
+        }
+
+        function toggleMatrixGroup(group) {
+            const btns = document.querySelectorAll(`.matrix-btn[data-group="${group}"]`);
+            const allActive = Array.from(btns).every(b => b.classList.contains('active'));
+            btns.forEach(b => {
+                if (allActive) {
+                    b.classList.remove('active');
+                    b.className = 'matrix-btn py-1 rounded text-center border transition-all bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700';
+                } else {
+                    b.classList.add('active');
+                    b.className = 'matrix-btn active py-1 rounded text-center border transition-all bg-indigo-600 text-white border-indigo-500 font-bold';
+                }
+            });
+            updateCronFromMatrix();
+        }
+
+        function getMatrixGroupString(group, maxCount) {
+            const btns = Array.from(document.querySelectorAll(`.matrix-btn[data-group="${group}"].active`));
+            if (btns.length === 0 || btns.length === maxCount) {
+                return '*';
+            }
+            return btns.map(b => b.dataset.value).sort((a, b) => parseInt(a) - parseInt(b)).join(',');
+        }
+
+        function updateCronFromMatrix() {
+            const min = getMatrixGroupString('min', 60);
+            const hour = getMatrixGroupString('hour', 24);
+            const day = getMatrixGroupString('day', 31);
+            const month = getMatrixGroupString('month', 12);
+            const dow = getMatrixGroupString('dow', 7);
+
+            const cronStr = `${min} ${hour} ${day} ${month} ${dow}`;
+            document.getElementById('jobCron').value = cronStr;
+        }
+
+        function parseCronToUI(cronStr) {
+            if (!cronStr) cronStr = '0,10,20,30,40,50 * * * *';
+
+            // Check if cronStr exists in Preset dropdown
+            const presetSelect = document.getElementById('cronPresetSelect');
+            let matchedPreset = false;
+            for (let i = 0; i < presetSelect.options.length; i++) {
+                if (presetSelect.options[i].value === cronStr) {
+                    presetSelect.selectedIndex = i;
+                    matchedPreset = true;
+                    break;
+                }
+            }
+
+            if (matchedPreset) {
+                switchCronMode('preset');
+            } else {
+                document.getElementById('cronCustomInput').value = cronStr;
+                switchCronMode('expression');
+            }
+            document.getElementById('jobCron').value = cronStr;
+        }
+
+        function filterTable() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            document.querySelectorAll('.job-row').forEach(row => {
+                const name = row.getAttribute('data-name').toLowerCase();
+                const url = row.getAttribute('data-url').toLowerCase();
+                if (name.includes(query) || url.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').innerText = 'New Cron Job';
+            document.getElementById('jobId').value = '';
+            document.getElementById('jobName').value = '';
+            document.getElementById('jobURL').value = '';
+            document.getElementById('jobMethod').value = 'GET';
+            document.getElementById('jobTimeout').value = '60';
+            document.getElementById('jobStatus').value = '1';
+            parseCronToUI('0,10,20,30,40,50 * * * *');
+            document.getElementById('jobModal').classList.remove('hidden');
+        }
+
+        function openEditModal(id, name, url, cron, method, timeout, status) {
+            document.getElementById('modalTitle').innerText = 'Edit Cron Job #' + id;
+            document.getElementById('jobId').value = id;
+            document.getElementById('jobName').value = name;
+            document.getElementById('jobURL').value = url;
+            document.getElementById('jobMethod').value = method;
+            document.getElementById('jobTimeout').value = timeout;
+            document.getElementById('jobStatus').value = status;
+            parseCronToUI(cron);
+            document.getElementById('jobModal').classList.remove('hidden');
+        }
+
+        function closeJobModal() {
+            document.getElementById('jobModal').classList.add('hidden');
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('jobId').value;
+            const payload = {
+                cron_job_name: document.getElementById('jobName').value,
+                url: document.getElementById('jobURL').value,
+                cron_expression: document.getElementById('jobCron').value,
+                http_method: document.getElementById('jobMethod').value,
+                timeout: parseInt(document.getElementById('jobTimeout').value),
+                status: parseInt(document.getElementById('jobStatus').value)
+            };
+
+            const url = id ? `/v1/cron-jobs/${id}` : '/v1/cron-jobs';
+            const method = id ? 'PATCH' : 'POST';
+
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json', 'X-API-Key': 'iconix-cron-secret-key' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                location.reload();
+            } else {
+                alert('Failed to save cron job');
+            }
+        }
+
+        async function triggerJob(id) {
+            const res = await fetch(`/v1/cron-jobs/${id}/trigger`, {
+                method: 'POST',
+                headers: { 'X-API-Key': 'iconix-cron-secret-key' }
+            });
+            if (res.ok) {
+                alert('Job triggered successfully!');
+            }
+        }
+
+        async function toggleStatus(id, newStatus) {
+            const endpoint = newStatus === 1 ? 'enable' : 'disable';
+            const res = await fetch(`/v1/cron-jobs/${id}/${endpoint}`, {
+                method: 'POST',
+                headers: { 'X-API-Key': 'iconix-cron-secret-key' }
+            });
+            if (res.ok) {
+                location.reload();
+            }
+        }
+
+        async function deleteJob(id) {
+            if (!confirm('Are you sure you want to delete cron job #' + id + '?')) return;
+            const res = await fetch(`/v1/cron-jobs/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-API-Key': 'iconix-cron-secret-key' }
+            });
+            if (res.ok) {
+                location.reload();
+            }
+        }
+    </script>
+</body>
+
+</html>

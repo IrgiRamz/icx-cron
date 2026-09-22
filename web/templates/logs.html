@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iconix Cron - Execution Logs</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="h-full font-sans antialiased flex flex-col">
+
+    <!-- Top Header -->
+    <header class="glass-panel sticky top-0 z-40 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <a href="/web" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-all">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-lg font-bold tracking-tight text-white">Execution Logs</h1>
+                        <p class="text-xs text-slate-400">7-Day Retention History</p>
+                    </div>
+                </div>
+
+                <div>
+                    <button onclick="location.reload()" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700">
+                        <i class="fa-solid fa-rotate-right"></i> Refresh Logs
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="glass-panel rounded-xl overflow-hidden border border-slate-800">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/80 text-slate-400 uppercase text-[11px] font-medium tracking-wider border-b border-slate-800">
+                        <tr>
+                            <th class="py-3.5 px-4">Log ID</th>
+                            <th class="py-3.5 px-4">Job Name / URL</th>
+                            <th class="py-3.5 px-4 text-center">HTTP Code</th>
+                            <th class="py-3.5 px-4 text-center">Duration</th>
+                            <th class="py-3.5 px-4">Response / Error Snippet</th>
+                            <th class="py-3.5 px-4 text-right">Executed At</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 font-mono text-xs">
+                        {{range .Logs}}
+                        <tr class="hover:bg-slate-800/40 transition-colors">
+                            <td class="py-3 px-4 text-slate-500 font-semibold">#{{.ID}}</td>
+                            <td class="py-3 px-4 font-sans">
+                                <span class="font-medium text-slate-200 block">{{.JobName}}</span>
+                                <span class="text-[11px] text-slate-400 truncate max-w-xs block">{{.JobURL}}</span>
+                            </td>
+                            <td class="py-3 px-4 text-center">
+                                {{if and (ge .StatusCode 200) (lt .StatusCode 300)}}
+                                <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{{.StatusCode}} OK</span>
+                                {{else}}
+                                <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">{{if eq .StatusCode 0}}ERR{{else}}{{.StatusCode}}{{end}}</span>
+                                {{end}}
+                            </td>
+                            <td class="py-3 px-4 text-center text-indigo-400 font-semibold">{{.ExecutionTimeMS}} ms</td>
+                            <td class="py-3 px-4 text-slate-400 truncate max-w-sm" title="{{if .ErrorMessage}}{{.ErrorMessage}}{{else}}{{.ResponseBodySnippet}}{{end}}">
+                                {{if .ErrorMessage}}
+                                <span class="text-rose-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i>{{.ErrorMessage}}</span>
+                                {{else}}
+                                <span>{{.ResponseBodySnippet}}</span>
+                                {{end}}
+                            </td>
+                            <td class="py-3 px-4 text-right text-slate-400 font-sans">
+                                {{.ExecutedAt.Format "15:04:05 02/01/2006"}}
+                            </td>
+                        </tr>
+                        {{else}}
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-slate-500 font-sans">No execution logs recorded yet.</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>
