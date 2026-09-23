@@ -23,11 +23,12 @@
         <div class="w-full max-w-[96%] 2xl:max-w-[98%] mx-auto px-3 sm:px-6 lg:px-8 py-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                    <a href="/web" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-all">
-                        <i class="fa-solid fa-arrow-left"></i>
+                    <a href="/web" onclick="if(document.referrer && document.referrer.includes(location.host)){ history.back(); return false; }" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-all shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m7 7H3"></path></svg>
+                        <span>Back</span>
                     </a>
                     <div>
-                        <h1 class="text-lg font-bold tracking-tight text-white">Execution Logs</h1>
+                        <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">Execution Logs</h1>
                         <p class="text-xs text-slate-400">7-Day Retention History</p>
                     </div>
                 </div>
