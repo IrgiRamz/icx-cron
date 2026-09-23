@@ -21,7 +21,8 @@
     </style>
 </head>
 
-<body class="min-h-full w-full max-w-full overflow-x-hidden font-sans antialiased flex flex-col bg-slate-950 text-slate-100">
+<body
+    class="min-h-full w-full max-w-full overflow-x-hidden font-sans antialiased flex flex-col bg-slate-950 text-slate-100">
 
     <!-- Top Navigation Header -->
     <header class="glass-panel sticky top-0 z-40 border-b border-slate-800 w-full overflow-x-hidden">
@@ -29,7 +30,8 @@
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <div class="flex items-center justify-between sm:justify-start">
                     <div class="flex items-center space-x-2.5">
-                        <div class="p-1.5 sm:p-2 bg-indigo-600 rounded-lg text-white font-bold shadow-lg shadow-indigo-500/30">
+                        <div
+                            class="p-1.5 sm:p-2 bg-indigo-600 rounded-lg text-white font-bold shadow-lg shadow-indigo-500/30">
                             <i class="fa-solid fa-clock-rotate-left text-base sm:text-lg"></i>
                         </div>
                         <div>
@@ -61,7 +63,8 @@
     </header>
 
     <!-- Main Content Area -->
-    <main class="flex-1 w-full max-w-[96%] 2xl:max-w-[98%] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6 overflow-x-hidden">
+    <main
+        class="flex-1 w-full max-w-[96%] 2xl:max-w-[98%] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6 overflow-x-hidden">
 
         <!-- Stats Overview Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -77,7 +80,8 @@
 
             <div class="glass-panel p-4 sm:p-5 rounded-xl flex items-center justify-between">
                 <div>
-                    <p class="text-[11px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Active Jobs</p>
+                    <p class="text-[11px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Active Jobs
+                    </p>
                     <h3 class="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">{{.ActiveJobs}}</h3>
                 </div>
                 <div class="p-2.5 sm:p-3 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/20">
@@ -87,7 +91,8 @@
 
             <div class="glass-panel p-4 sm:p-5 rounded-xl flex items-center justify-between">
                 <div>
-                    <p class="text-[11px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Failures</p>
+                    <p class="text-[11px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Failures
+                    </p>
                     <h3 class="text-xl sm:text-2xl font-bold text-rose-400 mt-1">{{.TotalFailures}}</h3>
                 </div>
                 <div class="p-2.5 sm:p-3 bg-rose-500/10 text-rose-400 rounded-lg border border-rose-500/20">
@@ -97,7 +102,8 @@
 
             <div class="glass-panel p-4 sm:p-5 rounded-xl flex items-center justify-between">
                 <div>
-                    <p class="text-[11px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Executions</p>
+                    <p class="text-[11px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total
+                        Executions</p>
                     <h3 class="text-xl sm:text-2xl font-bold text-indigo-400 mt-1">{{.TotalExecutions}}</h3>
                 </div>
                 <div class="p-2.5 sm:p-3 bg-indigo-500/10 text-indigo-400 rounded-lg border border-indigo-500/20">
@@ -164,37 +170,53 @@
                             <th class="py-3.5 px-4 sm:px-6 text-center border-b border-slate-800">Last Exec</th>
                             <th class="py-3.5 px-4 sm:px-6 text-center border-b border-slate-800">Executions</th>
                             <th class="py-3.5 px-4 sm:px-6 text-center border-b border-slate-800">Status</th>
-                            <th class="py-3.5 px-4 sm:px-6 text-right sticky right-0 z-20 bg-slate-900 border-b border-l border-slate-800 shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.5)]">Actions</th>
+                            <th
+                                class="py-3.5 px-4 sm:px-6 text-right sticky right-0 z-20 bg-slate-900 border-b border-l border-slate-800 shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.5)]">
+                                Actions</th>
                         </tr>
                     </thead>
                     <tbody id="jobsTableBody" class="font-mono text-xs">
                         {{range .Jobs}}
                         <tr class="hover:bg-slate-800/50 transition-colors job-row group" data-name="{{.Name}}"
                             data-url="{{.URL}}">
-                            <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-400 border-b border-slate-800/60">#{{.ID}}</td>
-                            <td class="py-3.5 px-4 sm:px-6 font-sans font-medium text-slate-100 truncate max-w-[140px] md:max-w-xs border-b border-slate-800/60">{{.Name}}</td>
+                            <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-400 border-b border-slate-800/60">
+                                {{.ID}}</td>
+                            <td
+                                class="py-3.5 px-4 sm:px-6 font-sans font-medium text-slate-100 truncate max-w-[140px] md:max-w-xs border-b border-slate-800/60">
+                                {{.Name}}</td>
                             <td class="py-3.5 px-4 sm:px-6 text-indigo-400 border-b border-slate-800/60">
-                                <span class="bg-indigo-500/5 px-2.5 py-1 rounded inline-block border border-indigo-500/10 font-mono text-[11px]">
+                                <span
+                                    class="bg-indigo-500/5 px-2.5 py-1 rounded inline-block border border-indigo-500/10 font-mono text-[11px]">
                                     {{.CronExpression}}
                                 </span>
                             </td>
-                            <td class="py-3.5 px-4 sm:px-6 text-slate-300 font-sans max-w-xs md:max-w-md lg:max-w-xl xl:max-w-2xl truncate border-b border-slate-800/60" title="{{.URL}}">
+                            <td class="py-3.5 px-4 sm:px-6 text-slate-300 font-sans max-w-xs md:max-w-md lg:max-w-xl xl:max-w-2xl truncate border-b border-slate-800/60"
+                                title="{{.URL}}">
                                 <a href="#"
                                     class="hover:text-indigo-400 underline decoration-slate-700 underline-offset-2 truncate block">{{.URL}}</a>
                             </td>
-                            <td class="py-3.5 px-4 sm:px-6 text-center font-bold text-indigo-300 font-mono border-b border-slate-800/60">{{.GetEPD}}</td>
-                            <td class="py-3.5 px-4 sm:px-6 text-center text-emerald-400 font-bold border-b border-slate-800/60">{{.TotalSuccess}}</td>
-                            <td class="py-3.5 px-4 sm:px-6 text-center text-rose-400 font-bold border-b border-slate-800/60">{{.TotalFail}}</td>
-                            <td class="py-3.5 px-4 sm:px-6 text-center font-sans text-slate-400 whitespace-nowrap border-b border-slate-800/60">
+                            <td
+                                class="py-3.5 px-4 sm:px-6 text-center font-bold text-indigo-300 font-mono border-b border-slate-800/60">
+                                {{.GetEPD}}</td>
+                            <td
+                                class="py-3.5 px-4 sm:px-6 text-center text-emerald-400 font-bold border-b border-slate-800/60">
+                                {{.TotalSuccess}}</td>
+                            <td
+                                class="py-3.5 px-4 sm:px-6 text-center text-rose-400 font-bold border-b border-slate-800/60">
+                                {{.TotalFail}}</td>
+                            <td
+                                class="py-3.5 px-4 sm:px-6 text-center font-sans text-slate-400 whitespace-nowrap border-b border-slate-800/60">
                                 {{if .LastRunAt}}{{.LastRunAt.Format "15:04:05 02/01"}}{{else}}-{{end}}
                             </td>
-                            <td class="py-3.5 px-4 sm:px-6 text-center font-sans whitespace-nowrap border-b border-slate-800/60">
+                            <td
+                                class="py-3.5 px-4 sm:px-6 text-center font-sans whitespace-nowrap border-b border-slate-800/60">
                                 <button onclick="openExecutionsModal({{.ID}}, '{{.Name}}')"
                                     class="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-md border border-indigo-500/20 transition-all">
                                     <i class="fa-solid fa-list-check text-[10px]"></i> Executions
                                 </button>
                             </td>
-                            <td class="py-3.5 px-4 sm:px-6 text-center font-sans whitespace-nowrap border-b border-slate-800/60">
+                            <td
+                                class="py-3.5 px-4 sm:px-6 text-center font-sans whitespace-nowrap border-b border-slate-800/60">
                                 {{if eq .Status 1}}
                                 <span
                                     class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -207,25 +229,17 @@
                                 </span>
                                 {{end}}
                             </td>
-                            <td class="py-3.5 px-4 sm:px-6 text-right font-sans whitespace-nowrap space-x-1 sticky right-0 z-10 bg-slate-950 group-hover:bg-slate-900 transition-colors border-b border-l border-slate-800/60 shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.5)]">
+                            <td
+                                class="py-3.5 px-4 sm:px-6 text-right font-sans whitespace-nowrap space-x-1 sticky right-0 z-10 bg-slate-950 group-hover:bg-slate-900 transition-colors border-b border-l border-slate-800/60 shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.5)]">
                                 <button onclick="triggerJob({{.ID}})" title="Trigger Now"
                                     class="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-md transition-all">
                                     <i class="fa-solid fa-play text-xs"></i>
                                 </button>
-                                <button
-                                    onclick="editJobFromData(this)"
-                                    data-id="{{.ID}}"
-                                    data-name="{{.Name}}"
-                                    data-url="{{.URL}}"
-                                    data-cron="{{.CronExpression}}"
-                                    data-method="{{.Method}}"
-                                    data-timeout="{{.TimeoutSeconds}}"
-                                    data-status="{{.Status}}"
-                                    data-user="{{.AuthUser}}"
-                                    data-pw="{{.AuthPW}}"
-                                    data-body="{{.HTTPMessageBody}}"
-                                    data-headers="{{.HTTPHeaders}}"
-                                    title="Edit"
+                                <button onclick="editJobFromData(this)" data-id="{{.ID}}" data-name="{{.Name}}"
+                                    data-url="{{.URL}}" data-cron="{{.CronExpression}}" data-method="{{.Method}}"
+                                    data-timeout="{{.TimeoutSeconds}}" data-status="{{.Status}}"
+                                    data-user="{{.AuthUser}}" data-pw="{{.AuthPW}}" data-body="{{.HTTPMessageBody}}"
+                                    data-headers="{{.HTTPHeaders}}" title="Edit"
                                     class="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-md transition-all">
                                     <i class="fa-solid fa-pen-to-square text-xs"></i>
                                 </button>
@@ -242,7 +256,9 @@
                         </tr>
                         {{else}}
                         <tr>
-                            <td colspan="11" class="py-8 text-center text-slate-500 font-sans border-b border-slate-800/60">No cron jobs configured
+                            <td colspan="11"
+                                class="py-8 text-center text-slate-500 font-sans border-b border-slate-800/60">No cron
+                                jobs configured
                                 yet. Click "New Cron Job" to create one.</td>
                         </tr>
                         {{end}}
@@ -256,7 +272,8 @@
     <!-- Modal Form (Create / Edit Job) -->
     <div id="jobModal"
         class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-3 sm:p-4">
-        <div class="glass-panel max-w-lg w-full max-h-[90vh] overflow-y-auto rounded-xl border border-slate-700 shadow-2xl p-4 sm:p-6 relative">
+        <div
+            class="glass-panel max-w-lg w-full max-h-[90vh] overflow-y-auto rounded-xl border border-slate-700 shadow-2xl p-4 sm:p-6 relative">
             <button onclick="closeJobModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
@@ -439,13 +456,16 @@
                 <div class="pt-1">
                     <button type="button" onclick="toggleAdvancedSettings()" id="advancedToggleBtn"
                         class="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1.5 transition-colors">
-                        <i class="fa-solid fa-chevron-right text-[10px] transition-transform duration-200" id="advancedChevron"></i>
+                        <i class="fa-solid fa-chevron-right text-[10px] transition-transform duration-200"
+                            id="advancedChevron"></i>
                         <span id="advancedToggleLabel">+ Advanced HTTP Settings</span>
                     </button>
-                    <div id="advancedSettings" class="hidden mt-3 space-y-3 p-3 bg-slate-900/60 border border-slate-800 rounded-lg">
+                    <div id="advancedSettings"
+                        class="hidden mt-3 space-y-3 p-3 bg-slate-900/60 border border-slate-800 rounded-lg">
                         <!-- Basic Auth -->
                         <div>
-                            <label class="block text-[11px] font-medium text-slate-300 mb-1">HTTP Basic Authentication</label>
+                            <label class="block text-[11px] font-medium text-slate-300 mb-1">HTTP Basic
+                                Authentication</label>
                             <div class="grid grid-cols-2 gap-2">
                                 <input type="text" id="jobAuthUser" placeholder="Username"
                                     class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
@@ -455,14 +475,17 @@
                         </div>
                         <!-- Message Body -->
                         <div>
-                            <label class="block text-[11px] font-medium text-slate-300 mb-1">HTTP Message Body (Payload)</label>
+                            <label class="block text-[11px] font-medium text-slate-300 mb-1">HTTP Message Body
+                                (Payload)</label>
                             <textarea id="jobMessageBody" rows="2" placeholder='{"key": "value"}'
                                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500 resize-y"></textarea>
                         </div>
                         <!-- Headers -->
                         <div>
-                            <label class="block text-[11px] font-medium text-slate-300 mb-1">HTTP Headers (1 header per line)</label>
-                            <textarea id="jobHeaders" rows="2" placeholder="Content-Type: application/json&#10;Authorization: Bearer secret"
+                            <label class="block text-[11px] font-medium text-slate-300 mb-1">HTTP Headers (1 header per
+                                line)</label>
+                            <textarea id="jobHeaders" rows="2"
+                                placeholder="Content-Type: application/json&#10;Authorization: Bearer secret"
                                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500 resize-y"></textarea>
                         </div>
                     </div>
@@ -488,7 +511,8 @@
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             <div class="mb-4 pr-8">
-                <h3 id="execModalTitle" class="text-base sm:text-lg font-bold text-white">Cron Job Executions & Predictions</h3>
+                <h3 id="execModalTitle" class="text-base sm:text-lg font-bold text-white">Cron Job Executions &
+                    Predictions</h3>
                 <p id="execModalSub" class="text-xs text-slate-400 font-mono mt-0.5 truncate"></p>
             </div>
 
