@@ -12,11 +12,84 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- DataTables CDN -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
     <style>
         .glass-panel {
             background: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* DataTables Dark Theme Overrides */
+        .dataTables_wrapper {
+            color: #94a3b8;
+            font-size: 0.825rem;
+            padding: 1rem;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_processing,
+        .dataTables_wrapper .dataTables_paginate {
+            color: #94a3b8 !important;
+            margin-bottom: 0.75rem;
+        }
+
+        .dataTables_wrapper .dataTables_length select,
+        .dataTables_wrapper .dataTables_filter input {
+            background-color: #0f172a !important;
+            border: 1px solid #1e293b !important;
+            border-radius: 0.5rem !important;
+            color: #f8fafc !important;
+            padding: 0.35rem 0.65rem !important;
+            font-size: 0.75rem !important;
+            outline: none !important;
+        }
+
+        .dataTables_wrapper .dataTables_filter input:focus {
+            border-color: #6366f1 !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            color: #94a3b8 !important;
+            border: 1px solid #1e293b !important;
+            border-radius: 0.375rem !important;
+            background: #0f172a !important;
+            padding: 0.25rem 0.65rem !important;
+            font-size: 0.75rem !important;
+            margin-left: 0.25rem !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+            background: #4f46e5 !important;
+            color: #ffffff !important;
+            border-color: #6366f1 !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #1e293b !important;
+            color: #ffffff !important;
+            border-color: #334155 !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+            opacity: 0.4 !important;
+            background: #0f172a !important;
+            border-color: #1e293b !important;
+        }
+
+        table.dataTable thead .sorting,
+        table.dataTable thead .sorting_asc,
+        table.dataTable thead .sorting_desc {
+            cursor: pointer;
+        }
+
+        table.dataTable.no-footer {
+            border-bottom: 1px solid #1e293b !important;
         }
     </style>
 </head>
@@ -157,7 +230,8 @@
 
             <!-- Table Container -->
             <div class="w-full overflow-x-auto relative shadow-sm rounded-b-xl border-t border-slate-800/80">
-                <table class="w-full min-w-full text-left text-xs text-slate-300 border-separate border-spacing-0">
+                <table id="cronJobsTable"
+                    class="w-full min-w-full text-left text-xs text-slate-300 border-separate border-spacing-0">
                     <thead class="bg-slate-900 text-slate-400 uppercase text-[11px] font-medium tracking-wider">
                         <tr>
                             <th class="py-3.5 px-4 sm:px-6 border-b border-slate-800">ID</th>
@@ -253,13 +327,6 @@
                                     <i class="fa-solid fa-trash text-xs"></i>
                                 </button>
                             </td>
-                        </tr>
-                        {{else}}
-                        <tr>
-                            <td colspan="11"
-                                class="py-8 text-center text-slate-500 font-sans border-b border-slate-800/60">No cron
-                                jobs configured
-                                yet. Click "New Cron Job" to create one.</td>
                         </tr>
                         {{end}}
                     </tbody>
@@ -952,6 +1019,39 @@
                 location.reload();
             }
         }
+    </script>
+
+    <!-- jQuery & DataTables CDN -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (document.getElementById('cronJobsTable')) {
+                $('#cronJobsTable').DataTable({
+                    pageLength: 10,
+                    lengthMenu: [10, 25, 50, 100],
+                    columnDefs: [
+                        { orderable: false, targets: -1 } // Column Actions non-orderable
+                    ],
+                    language: {
+                        emptyTable: "Belum ada cron job yang terdaftar",
+                        zeroRecords: "Tidak ada data yang cocok dengan pencarian",
+                        search: "Cari:",
+                        lengthMenu: "Tampil _MENU_ data",
+                        info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                        infoEmpty: "Menampilkan 0 data",
+                        infoFiltered: "(disaring dari _MAX_ total data)",
+                        paginate: {
+                            first: "Awal",
+                            last: "Akhir",
+                            next: "Lanjut",
+                            previous: "Kembali"
+                        }
+                    }
+                });
+            }
+        });
     </script>
 </body>
 

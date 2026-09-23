@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-slate-950 text-slate-100">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,23 +9,102 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- DataTables CDN -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
     <style>
         .glass-panel {
             background: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
+
+        /* DataTables Dark Theme Overrides */
+        .dataTables_wrapper {
+            color: #94a3b8;
+            font-size: 0.825rem;
+            padding: 1rem;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_processing,
+        .dataTables_wrapper .dataTables_paginate {
+            color: #94a3b8 !important;
+            margin-bottom: 0.75rem;
+        }
+
+        .dataTables_wrapper .dataTables_length select,
+        .dataTables_wrapper .dataTables_filter input {
+            background-color: #0f172a !important;
+            border: 1px solid #1e293b !important;
+            border-radius: 0.5rem !important;
+            color: #f8fafc !important;
+            padding: 0.35rem 0.65rem !important;
+            font-size: 0.75rem !important;
+            outline: none !important;
+        }
+
+        .dataTables_wrapper .dataTables_filter input:focus {
+            border-color: #6366f1 !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            color: #94a3b8 !important;
+            border: 1px solid #1e293b !important;
+            border-radius: 0.375rem !important;
+            background: #0f172a !important;
+            padding: 0.25rem 0.65rem !important;
+            font-size: 0.75rem !important;
+            margin-left: 0.25rem !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+            background: #4f46e5 !important;
+            color: #ffffff !important;
+            border-color: #6366f1 !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #1e293b !important;
+            color: #ffffff !important;
+            border-color: #334155 !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+            opacity: 0.4 !important;
+            background: #0f172a !important;
+            border-color: #1e293b !important;
+        }
+
+        table.dataTable thead .sorting,
+        table.dataTable thead .sorting_asc,
+        table.dataTable thead .sorting_desc {
+            cursor: pointer;
+        }
+
+        table.dataTable.no-footer {
+            border-bottom: 1px solid #1e293b !important;
+        }
     </style>
 </head>
-<body class="h-full font-sans antialiased flex flex-col">
+
+<body class="h-full font-sans antialiased flex flex-col bg-slate-950 text-slate-100">
 
     <!-- Top Header -->
     <header class="glass-panel sticky top-0 z-40 border-b border-slate-800 w-full overflow-x-hidden">
         <div class="w-full max-w-[96%] 2xl:max-w-[98%] mx-auto px-3 sm:px-6 lg:px-8 py-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                    <a href="/web" onclick="if(document.referrer && document.referrer.includes(location.host)){ history.back(); return false; }" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-all shadow-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m7 7H3"></path></svg>
+                    <a href="/web"
+                        onclick="if(document.referrer && document.referrer.includes(location.host)){ history.back(); return false; }"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-all shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m7 7H3"></path>
+                        </svg>
                         <span>Back</span>
                     </a>
                     <div>
@@ -34,7 +114,8 @@
                 </div>
 
                 <div>
-                    <button onclick="location.reload()" class="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-all">
+                    <button onclick="location.reload()"
+                        class="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-all">
                         <i class="fa-solid fa-rotate-right"></i> Refresh Logs
                     </button>
                 </div>
@@ -45,9 +126,10 @@
     <!-- Main Content -->
     <main class="flex-1 w-full max-w-[96%] 2xl:max-w-[98%] mx-auto px-3 sm:px-6 lg:px-8 py-6">
         <div class="glass-panel rounded-xl overflow-hidden border border-slate-800">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-slate-300">
-                    <thead class="bg-slate-900/80 text-slate-400 uppercase text-[11px] font-medium tracking-wider border-b border-slate-800">
+            <div class="overflow-x-auto w-full">
+                <table id="logsTable" class="w-full text-left text-xs text-slate-300">
+                    <thead
+                        class="bg-slate-900/80 text-slate-400 uppercase text-[11px] font-medium tracking-wider border-b border-slate-800">
                         <tr>
                             <th class="py-3.5 px-4">Log ID</th>
                             <th class="py-3.5 px-4">Job Name / URL</th>
@@ -67,15 +149,21 @@
                             </td>
                             <td class="py-3 px-4 text-center">
                                 {{if and (ge .StatusCode 200) (lt .StatusCode 300)}}
-                                <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{{.StatusCode}} OK</span>
+                                <span
+                                    class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{{.StatusCode}}
+                                    OK</span>
                                 {{else}}
-                                <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">{{if eq .StatusCode 0}}ERR{{else}}{{.StatusCode}}{{end}}</span>
+                                <span
+                                    class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">{{if
+                                    eq .StatusCode 0}}ERR{{else}}{{.StatusCode}}{{end}}</span>
                                 {{end}}
                             </td>
                             <td class="py-3 px-4 text-center text-indigo-400 font-semibold">{{.ExecutionTimeMS}} ms</td>
-                            <td class="py-3 px-4 text-slate-400 truncate max-w-sm" title="{{if .ErrorMessage}}{{.ErrorMessage}}{{else}}{{.ResponseBodySnippet}}{{end}}">
+                            <td class="py-3 px-4 text-slate-400 truncate max-w-sm"
+                                title="{{if .ErrorMessage}}{{.ErrorMessage}}{{else}}{{.ResponseBodySnippet}}{{end}}">
                                 {{if .ErrorMessage}}
-                                <span class="text-rose-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i>{{.ErrorMessage}}</span>
+                                <span class="text-rose-400"><i
+                                        class="fa-solid fa-triangle-exclamation mr-1"></i>{{.ErrorMessage}}</span>
                                 {{else}}
                                 <span>{{.ResponseBodySnippet}}</span>
                                 {{end}}
@@ -84,10 +172,6 @@
                                 {{.ExecutedAt.Format "15:04:05 02/01/2006"}}
                             </td>
                         </tr>
-                        {{else}}
-                        <tr>
-                            <td colspan="6" class="py-8 text-center text-slate-500 font-sans">No execution logs recorded yet.</td>
-                        </tr>
                         {{end}}
                     </tbody>
                 </table>
@@ -95,5 +179,36 @@
         </div>
     </main>
 
+    <!-- jQuery & DataTables CDN -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (document.getElementById('logsTable')) {
+                $('#logsTable').DataTable({
+                    pageLength: 10,
+                    order: [[0, 'desc']],
+                    lengthMenu: [10, 25, 50, 100],
+                    language: {
+                        emptyTable: "Belum ada riwayat log",
+                        zeroRecords: "Tidak ada data yang cocok dengan pencarian",
+                        search: "Cari:",
+                        lengthMenu: "Tampil _MENU_ data",
+                        info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                        infoEmpty: "Menampilkan 0 data",
+                        infoFiltered: "(disaring dari _MAX_ total data)",
+                        paginate: {
+                            first: "Awal",
+                            last: "Akhir",
+                            next: "Lanjut",
+                            previous: "Kembali"
+                        }
+                    }
+                });
+            }
+        });
+    </script>
 </body>
+
 </html>
