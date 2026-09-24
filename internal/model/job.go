@@ -27,15 +27,59 @@ type Job struct {
 
 // JobLog represents an execution log for a job
 type JobLog struct {
-	ID                   int64     `json:"log_id" db:"id"`
-	JobID                int64     `json:"cron_job_id" db:"job_id"`
-	JobName              string    `json:"cron_job_name,omitempty" db:"job_name"`
-	JobURL               string    `json:"url,omitempty" db:"job_url"`
-	StatusCode           int       `json:"http_status_code" db:"status_code"`
-	ExecutionTimeMS      int64     `json:"execution_time_ms" db:"execution_time_ms"`
-	ErrorMessage         string    `json:"error_message,omitempty" db:"error_message"`
-	ResponseBodySnippet  string    `json:"response_snippet,omitempty" db:"response_body_snippet"`
-	ExecutedAt           time.Time `json:"executed_at" db:"executed_at"`
+	ID                  int64     `json:"log_id" db:"id"`
+	JobID               int64     `json:"cron_job_id" db:"job_id"`
+	JobName             string    `json:"cron_job_name,omitempty" db:"job_name"`
+	JobURL              string    `json:"url,omitempty" db:"job_url"`
+	StatusCode          int       `json:"http_status_code" db:"status_code"`
+	ExecutionTimeMS     int64     `json:"execution_time_ms" db:"execution_time_ms"`
+	ErrorMessage        string    `json:"error_message,omitempty" db:"error_message"`
+	ResponseBodySnippet string    `json:"response_snippet,omitempty" db:"response_body_snippet"`
+	ExecutedAt          time.Time `json:"executed_at" db:"executed_at"`
+}
+
+// LogItemResponse represents an Easycron compatible response serializer for execution logs
+type LogItemResponse struct {
+	LogID         int64   `json:"log_id,omitempty"`
+	CronJobID     int64   `json:"cron_job_id"`
+	ScheduledTime string  `json:"scheduled_time"`
+	FiredTime     string  `json:"fired_time"`
+	DoneTime      string  `json:"done_time"`
+	TotalTime     float64 `json:"total_time"` // Konversi dari execution_time_ms ke detik
+	HTTPCode      int     `json:"http_code"`  // Dari http_status_code
+	Status        string  `json:"status"`     // "Succeeded" jika 2xx/3xx, "Failed" jika >=400 atau error
+	Error         string  `json:"error"`
+	BotIP         string  `json:"bot_ip,omitempty"`
+
+	// Opsional: Pertahankan field lama sebagai fallback agar backward compatible
+	HTTPStatusCode  int    `json:"http_status_code,omitempty"`
+	ExecutionTimeMs int64  `json:"execution_time_ms,omitempty"`
+	ExecutedAt      string `json:"executed_at,omitempty"`
+}
+
+// ToLogItemResponse converts a JobLog database model to LogItemResponse
+func (l *JobLog) ToLogItemResponse() LogItemResponse {
+	statusStr := "Failed"
+	if l.StatusCode >= 200 && l.StatusCode < 400 && l.ErrorMessage == "" {
+		statusStr = "Succeeded"
+	}
+
+	doneTime := l.ExecutedAt.Add(time.Duration(l.ExecutionTimeMS) * time.Millisecond)
+
+	return LogItemResponse{
+		LogID:           l.ID,
+		CronJobID:       l.JobID,
+		ScheduledTime:   l.ExecutedAt.Format("2006-01-02 15:04:05"),
+		FiredTime:       l.ExecutedAt.Format("2006-01-02 15:04:05"),
+		DoneTime:        doneTime.Format("2006-01-02 15:04:05"),
+		TotalTime:       float64(l.ExecutionTimeMS) / 1000.0,
+		HTTPCode:        l.StatusCode,
+		Status:          statusStr,
+		Error:           l.ErrorMessage,
+		HTTPStatusCode:  l.StatusCode,
+		ExecutionTimeMs: l.ExecutionTimeMS,
+		ExecutedAt:      l.ExecutedAt.Format("2006-01-02 15:04:05"),
+	}
 }
 
 // EasycronJobResponse represents the Easycron API compatible JSON structure for a job

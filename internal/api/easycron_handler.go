@@ -8,11 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"iconix-cron/internal/auth"
 	"iconix-cron/internal/model"
 	"iconix-cron/internal/repository"
 	"iconix-cron/internal/scheduler"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type EasycronHandler struct {
@@ -461,8 +462,14 @@ func (h *EasycronHandler) GetJobLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logResponses := make([]model.LogItemResponse, 0, len(logs))
+	for _, l := range logs {
+		logResponses = append(logResponses, l.ToLogItemResponse())
+	}
+
 	h.respondJSON(w, r, http.StatusOK, map[string]interface{}{
-		"logs":        logs,
+		"status":      "success",
+		"logs":        logResponses,
 		"total_count": total,
 	})
 }
